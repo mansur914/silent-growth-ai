@@ -43,10 +43,12 @@ export async function POST(req: Request) {
       text: completion.choices[0].message.content ?? "",
     });
 
-} catch (error: any) {
+  } catch (error: any) {
     console.error("FULL ERROR:", error);
+
     return Response.json(
       { error: error.message || "AI error" },
       { status: 500 }
     );
-  
+  }
+}
