@@ -1,7 +1,8 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.DEEPSEEK_API_KEY!,
+  baseURL: "https://api.deepseek.com/v1",
 });
 
 export async function POST(req: Request) {
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "deepseek-chat",
       messages: [
         {
           role: "system",
@@ -45,7 +46,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("FULL ERROR:", error);
-
     return Response.json(
       { error: error.message || "AI error" },
       { status: 500 }
