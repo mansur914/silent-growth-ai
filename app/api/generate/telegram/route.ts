@@ -2,29 +2,60 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const chatId = body.message?.chat?.id;
-    const text = body.message?.text;
+    console.log("Incoming update:", JSON.stringify(body));
 
-    if (!chatId || !text) {
+    const chatId = body.message?.chat?.id;
+    const userText = body.message?.text;
+
+    if (!chatId || !userText) {
       return new Response("OK");
     }
 
-    const reply = `Ты написал: ${text}`;
-
-    await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    // Запрос к DeepSeek
+    const aiResponse = await fetch("https://api.deepseek.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
       },
       body: JSON.stringify({
-        chat_id: chatId,
-        text: reply,
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: "Ты эксперт по вирусному контенту для Reels и TikTok."
+          },
+          {
+            role: "user",
+            content: userText
+          }
+        ],
+        temperature: 0.7
       }),
     });
 
+    const aiData = await aiResponse.json();
+
+    const reply =
+      aiData.choices?.[0]?.message?.content ||
+      "Ошибка генерации.";
+
+    // Ответ в Telegram
+    await fetch(
+      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: reply,
+        }),
+      }
+    );
+
     return new Response("OK");
   } catch (error) {
-    console.error(error);
+    console.error("ERROR:", error);
     return new Response("Error", { status: 500 });
   }
 }
